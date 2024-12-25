@@ -1,0 +1,19 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: car-management-db
+    ports:
+      - "3306:3306"  # Maps MySQL default port to the host
+    environment:
+      MYSQL_ROOT_PASSWORD: 1234qwer
+      MYSQL_DATABASE: car_management_db
+    volumes:
+      - db_data:/var/lib/mysql             # Persistent storage for database data
+    networks:
+      - car_management_network
+
+volumes:
+  db_data:
+
+networks:
+  car_management_network:
