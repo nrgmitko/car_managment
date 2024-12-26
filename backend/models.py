@@ -4,6 +4,7 @@ from datetime import date
 
 # CarService Model
 class CarService(SQLModel, table=True):
+    __tablename__ = "carservice"
     id: int = Field(default=None, primary_key=True)
     name: str
     city: str

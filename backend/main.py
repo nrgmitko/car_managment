@@ -16,14 +16,13 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 
-
 # Maintenance Model
 class Maintenance(Base):
     __tablename__ = "maintenances"
 
     id = Column(Integer, primary_key=True, index=True)
-    car_id = Column(Integer, index=True)
-    garage_id = Column(Integer, index=True)
+    car_id = Column(Integer, ForeignKey("cars.id"), index=True)
+    garage_id = Column(Integer, ForeignKey("garages.id"), index=True)
     service_type = Column(String(255), index=True)
     scheduled_date = Column(Date, index=True)
 
@@ -31,15 +30,31 @@ class Maintenance(Base):
     car = relationship("Car", back_populates="maintenances")
     garage = relationship("Garage", back_populates="maintenances")
 
+
+# CarService Model
+class CarService(Base):
+    __tablename__ = "carservice"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(255), nullable=False)
+    city = Column(String(255), nullable=False)
+    capacity = Column(Integer, nullable=False)
+
+    # Relationships
+    cars = relationship("CarServiceLink", back_populates="service")
+
+
 # CarServiceLink Model
 class CarServiceLink(Base):
     __tablename__ = "car_service_links"
+
     car_id = Column(Integer, ForeignKey("cars.id"), primary_key=True)
-    service_id = Column(Integer, ForeignKey("car_service.id"), primary_key=True)
+    service_id = Column(Integer, ForeignKey("carservice.id"), primary_key=True)
 
     # Relationships
     car = relationship("Car", back_populates="services")
     service = relationship("CarService", back_populates="cars")
+
 
 # Car Model
 class Car(Base):
@@ -50,8 +65,10 @@ class Car(Base):
     model = Column(String(255), nullable=False)
     year = Column(Integer, nullable=False)
 
-    # Relationship
+    # Relationships
     maintenances = relationship("Maintenance", back_populates="car")
+    services = relationship("CarServiceLink", back_populates="car")
+
 
 # Garage Model
 class Garage(Base):
@@ -61,12 +78,13 @@ class Garage(Base):
     name = Column(String(255), nullable=False)
     capacity = Column(Integer, nullable=False)
 
-    # Relationship
+    # Relationships
     maintenances = relationship("Maintenance", back_populates="garage")
 
 
 # Create tables
 Base.metadata.create_all(bind=engine)
+
 
 # Dependency to get DB session
 def get_db():
@@ -98,6 +116,24 @@ class CarResponseDTO(BaseModel):
 
     class Config:
         orm_mode = True
+
+# DTO Models for Garage
+class GarageCreateDTO(BaseModel):
+    name: str
+    capacity: int
+
+class GarageUpdateDTO(BaseModel):
+    name: Optional[str]
+    capacity: Optional[int]
+
+class GarageResponseDTO(BaseModel):
+    id: int
+    name: str
+    capacity: int
+
+    class Config:
+        orm_mode = True
+
 
 # DTO Models
 class ResponseMaintenanceDTO(BaseModel):
@@ -202,6 +238,52 @@ def get_all_cars(brand: Optional[str] = None, service_id: Optional[int] = None, 
 
     cars = query.all()
     return cars
+#Garage routes
+@app.post("/garages/", response_model=GarageResponseDTO)
+def create_garage(garage: GarageCreateDTO, db: Session = Depends(get_db)):
+    db_garage = Garage(**garage.dict())
+    db.add(db_garage)
+    db.commit()
+    db.refresh(db_garage)
+    return db_garage
+
+@app.put("/garages/{garage_id}", response_model=GarageResponseDTO)
+def update_garage(garage_id: int, garage: GarageUpdateDTO, db: Session = Depends(get_db)):
+    db_garage = db.query(Garage).filter(Garage.id == garage_id).first()
+    if not db_garage:
+        raise HTTPException(status_code=404, detail="Garage not found")
+
+    for key, value in garage.dict(exclude_unset=True).items():
+        setattr(db_garage, key, value)
+
+    db.commit()
+    db.refresh(db_garage)
+    return db_garage
+
+
+@app.delete("/garages/{garage_id}")
+def delete_garage(garage_id: int, db: Session = Depends(get_db)):
+    db_garage = db.query(Garage).filter(Garage.id == garage_id).first()
+    if not db_garage:
+        raise HTTPException(status_code=404, detail="Garage not found")
+
+    db.delete(db_garage)
+    db.commit()
+    return {"message": "Garage deleted successfully"}
+
+
+@app.get("/garages/", response_model=List[GarageResponseDTO])
+def get_all_garages(db: Session = Depends(get_db)):
+    garages = db.query(Garage).all()
+    return garages
+
+
+@app.get("/garages/{garage_id}", response_model=GarageResponseDTO)
+def get_garage_by_id(garage_id: int, db: Session = Depends(get_db)):
+    db_garage = db.query(Garage).filter(Garage.id == garage_id).first()
+    if not db_garage:
+        raise HTTPException(status_code=404, detail="Garage not found")
+    return db_garage
 
 
 @app.get("/cars/{car_id}", response_model=CarResponseDTO)
