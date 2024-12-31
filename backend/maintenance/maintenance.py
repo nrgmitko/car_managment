@@ -183,14 +183,13 @@ def get_maintenance_list(
     return response_data
 
 
-@router.get("/maintenance/monthlyRequests/", response_model=List[MonthlyRequestsReportDTO], tags=["Maintenance Controller"])
+@router.get("/maintenance/monthlyRequestsReport/", response_model=List[MonthlyRequestsReportDTO], tags=["Maintenance Controller"])
 def get_monthly_report(
     garage_id: int = Query(...),
     start_month: str = Query(...),
     end_month: str = Query(...),
     db: Session = Depends(get_db)
 ):
-    print(f"Start date: {start_month}, End date: {end_month}")
 
     try:
         start_date = datetime.strptime(start_month, "%Y-%m")
