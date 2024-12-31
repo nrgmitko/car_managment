@@ -66,6 +66,16 @@ def get_garages(city: str = None, db: Session = Depends(get_db)):
     return garages
 
 
+# POST /garages
+@router.post("/garages", response_model=ResponseGarageDTO, tags=["Garage Controller"])
+def create_garage(new_garage: CreateGarageDTO, db: Session = Depends(get_db)):
+    db_record = Garage(**new_garage.dict())
+    db.add(db_record)
+    db.commit()
+    db.refresh(db_record)
+    return db_record
+
+
 @router.get("/garages/dailyAvailabilityReport/", response_model=List[DailyAvailabilityReportDTO],
             tags=["Garage Controller"])
 def daily_availability_report(
