@@ -37,7 +37,7 @@ class CreateCarDTO(BaseModel):
     model: str
     productionYear: int
     licensePlate: str
-    garageIds: List[int]  # Expecting garageIds for association
+    garageIds: List[int]
 
     class Config:
         from_attributes = True
@@ -47,7 +47,7 @@ class UpdateCarDTO(BaseModel):
     model: str
     productionYear: int
     licensePlate: str
-    garageIds: List[int]  # Expecting garageIds for association
+    garageIds: List[int]
 
     class Config:
         from_attributes = True
@@ -57,7 +57,7 @@ class ResponseCarDTO(BaseModel):
     model: str
     productionYear: int
     licensePlate: str
-    garages: List[ResponseGarageDTO]  # List of garage objects (not just ids)
+    garages: List[ResponseGarageDTO]
 
     class Config:
         from_attributes = True
@@ -66,19 +66,19 @@ class ResponseCarDTO(BaseModel):
 
 #Maintinance Dtos
 class CreateMaintenanceDTO(BaseModel):
-    garage_id: int  # Required: ID of the garage
-    car_id: int  # Required: ID of the car
-    serviceType: str  # Required: Type of service (e.g., Oil Change)
-    scheduledDate: date  # Required: Scheduled date of the service
+    garage_id: int
+    car_id: int
+    serviceType: str
+    scheduledDate: date
 
     class Config:
         from_attributes = True
 
 class UpdateMaintenanceDTO(BaseModel):
-    garage_id: int  # Required: ID of the garage
-    car_id: int  # Required: ID of the car
-    serviceType: str  # Required: Type of service (e.g., Oil Change)
-    scheduledDate: date  # Required: Scheduled date of the service
+    garage_id: int
+    car_id: int
+    serviceType: str
+    scheduledDate: date
 
     class Config:
         from_attributes = True
@@ -87,22 +87,22 @@ class UpdateMaintenanceDTO(BaseModel):
         from_attributes = True
 
 class ResponseMaintenanceDTO(BaseModel):
-    id: int  # ID of the maintenance request
-    car_id: int  # Required: ID of the car
-    carName: str  # Name of the car (optional, included in the response for context)
-    serviceType: str  # Type of service (e.g., Oil Change)
-    scheduledDate: date  # Scheduled date of the maintenance
-    garage_id: int  # Required: ID of the garage
+    id: int
+    car_id: int
+    carName: str
+    serviceType: str
+    scheduledDate: date
+    garage_id: int
 
-    garageName: str  # Name of the garage (optional, included in the response for context)
+    garageName: str
 
     class Config:
         from_attributes = True
 
 
 class MonthlyRequestsReportDTO(BaseModel):
-    month: str  # The specific month (e.g., '2024-12')
-    requests: int  # The number of maintenance requests in this month
+    month: str
+    requests: int
 
     class Config:
         from_attributes = True

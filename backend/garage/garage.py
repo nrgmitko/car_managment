@@ -90,7 +90,6 @@ def daily_availability_report(
     report = []
     current_date = start_date
     while current_date <= end_date:
-        # Example for report, modify to query actual data
         available_capacity = db.query(Garage).filter(Garage.id == garage_id).first().capacity
         report.append(DailyAvailabilityReportDTO(date=current_date, availableCapacity=available_capacity))
 

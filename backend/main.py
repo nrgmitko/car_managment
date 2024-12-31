@@ -8,13 +8,12 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins; restrict this to specific domains for production
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],  # Allows all HTTP methods
-    allow_headers=["*"],  # Allows all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-# Registering the routers for Garage, Maintenance, and Car resources
 app.include_router(garage_router)
 app.include_router(maintenance_router)
 app.include_router(car_router)
