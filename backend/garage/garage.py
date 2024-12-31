@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime, timedelta
-from backend.models import Garage
+from backend.models import Garage, MaintenanceRequest
 from backend.dtos import (
     CreateGarageDTO,
     UpdateGarageDTO,
@@ -66,33 +66,49 @@ def get_garages(city: str = None, db: Session = Depends(get_db)):
     return garages
 
 
-# POST /garages
-@router.post("/garages", response_model=ResponseGarageDTO, tags=["Garage Controller"])
-def create_garage(new_garage: CreateGarageDTO, db: Session = Depends(get_db)):
-    db_record = Garage(**new_garage.dict())
-    db.add(db_record)
-    db.commit()
-    db.refresh(db_record)
-    return db_record
-
-
-# GET /garages/dailyAvailabilityReport
-@router.get("/garages/dailyAvailabilityReport", response_model=List[DailyAvailabilityReportDTO], tags=["Garage Controller"])
+@router.get("/garages/dailyAvailabilityReport/", response_model=List[DailyAvailabilityReportDTO],
+            tags=["Garage Controller"])
 def daily_availability_report(
         garage_id: int,
         start_date: str,
         end_date: str,
         db: Session = Depends(get_db)
 ):
-    start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
-    end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+    # Parse the start and end dates
+    try:
+        start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+        end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date format. Expected YYYY-MM-DD.")
 
+    # Fetch the garage and its capacity
+    garage = db.query(Garage).filter(Garage.id == garage_id).first()
+    if not garage:
+        raise HTTPException(status_code=404, detail="Garage not found")
+
+    # Start with the static available capacity (before maintenance requests)
+    available_capacity = garage.capacity
+
+    # Generate the report
     report = []
     current_date = start_date
     while current_date <= end_date:
-        available_capacity = db.query(Garage).filter(Garage.id == garage_id).first().capacity
-        report.append(DailyAvailabilityReportDTO(date=current_date, availableCapacity=available_capacity))
+        # Query the number of maintenance requests for this specific day
+        maintenance_requests_count = db.query(MaintenanceRequest).filter(
+            MaintenanceRequest.garage_id == garage_id,
+            MaintenanceRequest.scheduledDate == current_date  # Match the date exactly
+        ).count()
 
+        # Adjust the available capacity based on the number of requests for this day
+        daily_available_capacity = available_capacity - maintenance_requests_count
+
+        # Append the report entry for this day
+        report.append(DailyAvailabilityReportDTO(
+            date=current_date,
+            availableCapacity=daily_available_capacity
+        ))
+
+        # Move to the next day
         current_date += timedelta(days=1)
 
     return report
