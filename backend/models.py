@@ -1,41 +1,55 @@
 from sqlmodel import Field, SQLModel, Relationship
 from typing import List
 from datetime import date
+from enum import Enum
 
-# CarService Model
-class CarService(SQLModel, table=True):
-    __tablename__ = "carservice"
-    id: int = Field(default=None, primary_key=True)
-    name: str
-    city: str
-    capacity: int
-    requests: List["MaintenanceRequest"] = Relationship(back_populates="service")
-    cars: List["CarServiceLink"] = Relationship(back_populates="service")
+from typing_extensions import Optional
 
-# Car Model
+
+# Link model for the many-to-many relationship between Car and Garage
+class CarGarage(SQLModel, table=True):
+    car_id: int = Field(foreign_key="car.id", primary_key=True)
+    garage_id: int = Field(foreign_key="garage.id", primary_key=True)
+
+
+# Enum for Maintenance Request Status
 class Car(SQLModel, table=True):
     id: int = Field(default=None, primary_key=True)
-    brand: str
+    make: str
     model: str
-    year: int
-    services: List["CarServiceLink"] = Relationship(back_populates="car")
-    requests: List["MaintenanceRequest"] = Relationship(back_populates="car")
+    productionYear: int
+    licensePlate: str
 
-# CarServiceLink Model (junction table)
-class CarServiceLink(SQLModel, table=True):
-    car_id: int = Field(foreign_key="car.id", primary_key=True)
-    service_id: int = Field(foreign_key="carservice.id", primary_key=True)  # Corrected foreign key (reference to CarService)
+    # Many-to-many relationship with Garage
+    garages: List["Garage"] = Relationship(back_populates="cars", link_model=CarGarage)
 
-    car: Car = Relationship(back_populates="services")
-    service: CarService = Relationship(back_populates="cars")
+    # One-to-many relationship with MaintenanceRequest
+    maintenance_requests: List["MaintenanceRequest"] = Relationship(back_populates="car")
 
-# MaintenanceRequest Model
+
+class Garage(SQLModel, table=True):
+    id: int = Field(default=None, primary_key=True)
+    name: str
+    location: str
+    city: str
+    capacity: int
+
+    # Many-to-many relationship with Car
+    cars: List["Car"] = Relationship(back_populates="garages", link_model=CarGarage)
+
+    # One-to-many relationship with MaintenanceRequest
+    maintenance_requests: List["MaintenanceRequest"] = Relationship(back_populates="garage")
+
+
 class MaintenanceRequest(SQLModel, table=True):
     id: int = Field(default=None, primary_key=True)
-    service_id: int = Field(foreign_key="carservice.id")  # Corrected foreign key (reference to CarService)
     car_id: int = Field(foreign_key="car.id")
-    date: date
-    status: str
+    garage_id: int = Field(foreign_key="garage.id")
+    serviceType: str
+    scheduledDate: date
 
-    service: CarService = Relationship(back_populates="requests")
-    car: Car = Relationship(back_populates="requests")
+    # One-to-many relationship with Car
+    car: Car = Relationship(back_populates="maintenance_requests")
+
+    # One-to-many relationship with Garage
+    garage: Garage = Relationship(back_populates="maintenance_requests")
