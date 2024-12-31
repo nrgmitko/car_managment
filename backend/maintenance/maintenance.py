@@ -9,7 +9,7 @@ from backend.dtos import (
     CreateMaintenanceDTO,
     UpdateMaintenanceDTO,
     ResponseMaintenanceDTO,
-MonthlyRequestsReportDTO
+    MonthlyRequestsReportDTO, MonthName, YearMonth
 )
 from backend.database import get_db
 
@@ -183,30 +183,38 @@ def get_maintenance_list(
     return response_data
 
 
-@router.get("/maintenance/monthlyRequestsReport/", response_model=List[MonthlyRequestsReportDTO], tags=["Maintenance Controller"])
+@router.get("/maintenance/monthlyRequests/", response_model=List[MonthlyRequestsReportDTO], tags=["Maintenance Controller"])
 def get_monthly_report(
     garage_id: int = Query(...),
     start_month: str = Query(...),
     end_month: str = Query(...),
     db: Session = Depends(get_db)
 ):
+    print(f"Start date: {start_month}, End date: {end_month}")
 
     try:
+
         start_date = datetime.strptime(start_month, "%Y-%m")
         end_date = datetime.strptime(end_month, "%Y-%m")
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid date format, expected YYYY-MM")
 
+
     monthly_report = []
 
+
     while start_date <= end_date:
+
         current_month = start_date.strftime("%Y-%m")
+
 
         year = start_date.year
         month = start_date.month
         last_day = calendar.monthrange(year, month)[1]
 
+
         end_of_month = datetime(year, month, last_day)
+
 
         num_requests = db.query(MaintenanceRequest).filter(
             MaintenanceRequest.garage_id == garage_id,
@@ -214,8 +222,26 @@ def get_monthly_report(
             MaintenanceRequest.scheduledDate <= end_of_month
         ).count()
 
-        # Append to the monthly_report list
-        monthly_report.append(MonthlyRequestsReportDTO(month=current_month, requests=num_requests))
+
+        try:
+            month_name = MonthName(start_date.strftime("%B").upper())
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid month value")
+
+
+        leap_year = (year % 4 == 0 and (year % 100 != 0 or year % 400 == 0))
+
+
+        year_month = YearMonth(
+            year=year,
+            month=month_name,
+            leapYear=leap_year,
+            monthValue=month
+        )
+
+
+        monthly_report.append(MonthlyRequestsReportDTO(yearMonth=year_month, requests=num_requests))
+
 
         start_date = (start_date.replace(day=28) + timedelta(days=4)).replace(day=1)
 

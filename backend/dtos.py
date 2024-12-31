@@ -1,6 +1,9 @@
+from enum import Enum
+
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import date
+
 
 
 #Garages Dtos
@@ -100,8 +103,30 @@ class ResponseMaintenanceDTO(BaseModel):
         from_attributes = True
 
 
+class MonthName(str, Enum):
+    JANUARY = "JANUARY"
+    FEBRUARY = "FEBRUARY"
+    MARCH = "MARCH"
+    APRIL = "APRIL"
+    MAY = "MAY"
+    JUNE = "JUNE"
+    JULY = "JULY"
+    AUGUST = "AUGUST"
+    SEPTEMBER = "SEPTEMBER"
+    OCTOBER = "OCTOBER"
+    NOVEMBER = "NOVEMBER"
+    DECEMBER = "DECEMBER"
+
+
+class YearMonth(BaseModel):
+    year: int
+    month: MonthName
+    leapYear: bool
+    monthValue: int
+
+
 class MonthlyRequestsReportDTO(BaseModel):
-    month: str
+    yearMonth: YearMonth
     requests: int
 
     class Config:
