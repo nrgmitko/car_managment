@@ -183,7 +183,7 @@ def get_maintenance_list(
     return response_data
 
 
-@router.get("/maintenance/monthlyRequests/", response_model=List[MonthlyRequestsReportDTO], tags=["Maintenance Controller"])
+@router.get("/maintenance/monthlyRequestsReport/", response_model=List[MonthlyRequestsReportDTO], tags=["Maintenance Controller"])
 def get_monthly_report(
     garage_id: int = Query(...),
     start_month: str = Query(...),
